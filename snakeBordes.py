@@ -1,6 +1,8 @@
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
+import math
+
 
 #Imagen 1, toda la imagen es igual (Verde).
 img1 = cv.imread('C:/Users/pc/OneDrive - Universidad de los andes/Septimo semestre/Robocol/Img/Imagen7.jpg')
@@ -16,14 +18,17 @@ def revisoParecido(seccionActual,seccionComparar,mode = 0):
     promComp = cv.mean(seccionComparar)
     #Distancia euclidiana.
     if mode == 0:
-        disEucli = ((promActu[0]- promComp[0])^2 + (promActu[1]- promComp[1])^2 +(promActu[2]- promComp[2])^2 )^(1/2)
+        disEucli = math.sqrt((promActu[0]- promComp[0])**2.0 + (promActu[1]- promComp[1])**2.0 +(promActu[2]- promComp[2])**2.0 )
         dis = disEucli
     #RMSE penaliza distancias lejanas
     if mode == 1:
-        RMSE = (((promActu[0]- promComp[0])^2 + (promActu[1]- promComp[1])^2 +(promActu[2]- promComp[2])^2)/3 )^(1/2)
+        RMSE = math.sqrt(((promActu[0]- promComp[0])**2 + (promActu[1]- promComp[1])**2 +(promActu[2]- promComp[2])**2)/3 )
         dis = RMSE
     #Distancia manhattan.
     if mode == 2:
         disMan = abs(promActu[0]- promComp[0]) + abs(promActu[1]- promComp[1]) + abs(promActu[2]- promComp[2]) 
         dis = disMan
     return dis
+
+prom = revisoParecido(img1,img2,mode=1)
+print(prom)
