@@ -14,14 +14,36 @@ img3 = cv.imread('C:/Users/pc/OneDrive - Universidad de los andes/Septimo semest
 def master(img,divFilas = 10,divColum = 10):
     dim = img.shape
     #Se hace un escalamiento para que la imagen se pueda dividir en partes iguales.
-    if dim[0] % divFilas != 0:
-        fil = int(dim[0]/divFilas) * divFilas
-        img = cv.resize(img,(fil,dim[1]))
-    elif dim[1] % divColum != 0:
-        col = int(dim[1]/divColum) * divColum
-        img = cv.resize(img,(dim[0],col))
+    if dim[0] % divFilas != 0 or dim[1] % divColum != 0:
+        fil = int((dim[0]/divFilas)) * divFilas
+        col = int((dim[1]/divColum)) * divColum
+        img = cv.resize(img,(col,fil))
+        dim = img.shape
+    
+    pixHMin,pixWMin = dim[0]/divFilas,dim[1]/divColum
+    matrizPosi = np.zeros((divFilas,divColum,2))
+
+    for i in range(divFilas):
+        for j in range(divColum):
+            matrizPosi[i,j,:] = np.array([i*pixHMin,j*pixWMin])
+    cosa = reorganizoMatriz(matrizPosi)
     
 
+    
+
+    return cosa
+    
+def reorganizoMatriz(matrizPosi):
+    dim = matrizPosi.shape
+    matrizPosi2 = np.zeros((dim[0],dim[1],8))
+    for i in range(dim[0]-1):
+        for j in range(dim[1]-1):
+            arribaIzquierda = matrizPosi[i,j,:]
+            arribaDerecha = matrizPosi[i,j+1,:]
+            abajoDerecha = matrizPosi[i+1,j+1,:]
+            abajoIzquierda = matrizPosi[i+1,j,:]
+            matrizPosi2[i,j,:] = np.concatenate([arribaIzquierda,arribaDerecha,abajoDerecha,abajoIzquierda])
+    return matrizPosi2
 
 #Funcion que recibe los indices y entrega la imagen pequeñita.
 #ind, un vector fila donde el primer valor es la esquina izquierda abajo y va en sentido horario del cuadrado.
@@ -52,3 +74,5 @@ def revisoParecido(seccionActual,seccionComparar,mode = 0):
 imgen = pasameIndices(img1,np.array([630,610,300,630]))
 cv.imshow("imagen",imgen)
 
+cosa = master(img1)
+print(cosa)
