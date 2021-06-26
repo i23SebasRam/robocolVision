@@ -61,8 +61,8 @@ def horVerShift(imagex,imagey,number):
     datay = img_to_array(imagey)
     samplesx = expand_dims(datax,0)
     samplesy = expand_dims(datay,0)
-    datagen = ImageDataGenerator(width_shift_range=[-100,100],height_shift_range=0.5)
-    itx,cosa = datagen.flow(samplesx,samplesy,batch_size=1,seed=42)
+    datagen = ImageDataGenerator(width_shift_range=0.05,height_shift_range=0.05)
+    itx = datagen.flow(samplesx,batch_size=1,seed=42)
     ity = datagen.flow(samplesy,batch_size=1,seed=42)
     for i in range(number):
         #pyplot.subplot(330+1+i)
@@ -78,7 +78,6 @@ def horVerShift(imagex,imagey,number):
         ax1.imshow(imagex)
         ax2.imshow(imagey)
     pyplot.show()
-
 
 
 rutax = os.path.join("D:\\testAugmen","x",listNamesX[0])
