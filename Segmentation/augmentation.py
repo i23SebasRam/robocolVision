@@ -56,7 +56,7 @@ listNamesY = os.listdir(pathy)
 
 #Horizontal or vertical shift.
 
-def horVerShift(imagex,imagey,number,showImage = False,widthShift = 0.05,heightShift = 0.05):
+def Shift(imagex,imagey,number,showImage = False,widthShift = 0.05,heightShift = 0.05):
     datax = img_to_array(imagex)
     datay = img_to_array(imagey)
     samplesx = expand_dims(datax,0)
@@ -160,14 +160,47 @@ def zoom(imagex,imagey,number,showImage = False, zoomRange = [0.5,1.5], zoomIn =
     pyplot.show()
 
 
+def generalAugmentation(imagex,imagey,number,showImage = False,horizontalFlip=False,verticalFlip=False,zoomRange=[1,1],bright = [1,1],rotation = 0):
+    datax = img_to_array(imagex)
+    datay = img_to_array(imagey)
+    samplesx = expand_dims(datax,0)
+    samplesy = expand_dims(datay,0)
+    datagen = ImageDataGenerator(horizontal_flip=horizontalFlip,vertical_flip=verticalFlip,zoom_range=zoomRange,brightness_range=bright,rotation_range=rotation)
+    datageny = ImageDataGenerator(horizontal_flip=horizontalFlip,vertical_flip=verticalFlip,zoom_range=zoomRange,rotation_range=rotation)
+    itx = datagen.flow(samplesx,batch_size=1,seed=42)
+    ity = datageny.flow(samplesy,batch_size=1,seed=42)
+    for i in range(number):
+        batchx = itx.next()
+        batchy = ity.next()
+        imagex = batchx[0].astype('uint8')
+        imagey = batchy[0].astype('uint8')
+        if showImage == True:
+            fig = pyplot.figure()
+            ax1 = fig.add_subplot(1,2,1)
+            ax2 = fig.add_subplot(1,2,2)
+            ax1.imshow(imagex)
+            ax2.imshow(imagey)
+    pyplot.show()
+
+
 rutax = os.path.join("D:\\testAugmen","x",listNamesX[0])
 rutay = os.path.join("D:\\testAugmen","y",listNamesY[0])
 imgx = load_img(rutax)
 imgy = load_img(rutay)
-horVerShift(imgx,imgy,9)
+Shift(imgx,imgy,9,showImage=True)
 flip(imgx,imgy,9)
 brightness(imgx,imgy,9)
-zoom(imgx,imgy,9,showImage=True,zoomOut=True)
+zoom(imgx,imgy,9)
+generalAugmentation(
+    imgx,
+    imgy,
+    number=9,
+    horizontalFlip=True,
+    verticalFlip=True,
+    zoomRange=[0.5,0.95], 
+    bright=[0.5,1.5],
+    rotation=5
+    )
 
 
 
