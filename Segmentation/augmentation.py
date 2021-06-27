@@ -2,6 +2,7 @@ from numpy import expand_dims
 import numpy as np
 from numpy.core.fromnumeric import shape, size
 from numpy.random import seed
+from scipy.ndimage.interpolation import shift
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.preprocessing.image import img_to_array
@@ -18,52 +19,16 @@ pathy = 'D:/testAugmen/y'
 #Take the files
 listNamesX = os.listdir(pathx)
 listNamesY = os.listdir(pathy)
-ruta = os.path.join("D:\\testAugmen","x",listNamesX[0])
-img = load_img(ruta)
-#pyplot.imshow(img)
-#pyplot.show()
-#print(size(listNamesX))
 
-#Load the images
-
-#def loadImage(listNamesx,listNamesy,rutax,rutay):
-    #npX = np.array([])
-    #npY = np.array([])
-    #for idx,item in enumerate(listNamesx):
-    #    pathx = os.path.join(rutax,item)
-    #    img = load_img(pathx)
-    #    npX[:,:,:,idx] = img
-    
-   # for idy,item in enumerate(listNamesy):
-   #     pathy = os.path.join(rutay,item)
-   #     img = load_img(pathx)
-   #     npY[:,:,:,idy] = img
-   # return npX,npY 
-
-#Path of Working directory
-pathx = 'D:/testAugmen/x'
-pathy = 'D:/testAugmen/y'
-
-#Take the files
-rutax = ["D:\\testAugmen","x"]
-rutay = ["D:\\testAugmen","y"]
-listNamesX = os.listdir(pathx)
-listNamesY = os.listdir(pathy)
-
-#imgX,imgY = load_img(listNamesX,listNamesY,pathx,pathy)
-
-#print(imgX.shape())
-
-#Horizontal or vertical shift.
-
+#Horizontal and vertical shift
 def Shift(imagex,imagey,number,showImage = False,widthShift = 0.05,heightShift = 0.05):
     datax = img_to_array(imagex)
     datay = img_to_array(imagey)
     samplesx = expand_dims(datax,0)
     samplesy = expand_dims(datay,0)
-    datagen = ImageDataGenerator(width_shift_range=widthShift,height_shift_range=heightShift)
-    itx = datagen.flow(samplesx,batch_size=1,seed=42)
-    ity = datagen.flow(samplesy,batch_size=1,seed=42)
+    datagen = ImageDataGenerator(width_shift_range=widthShift,height_shift_range=heightShift,fill_mode="wrap")
+    itx = datagen.flow(samplesx,batch_size=1,seed=42,save_to_dir="D:/testAugmen/xAugmented",save_prefix='x')
+    ity = datagen.flow(samplesy,batch_size=1,seed=42,save_to_dir="D:/testAugmen/yAugmented",save_prefix='y')
     for i in range(number):
         batchx = itx.next()
         batchy = ity.next()
@@ -79,7 +44,7 @@ def Shift(imagex,imagey,number,showImage = False,widthShift = 0.05,heightShift =
             ax1.imshow(imagex)
             ax2.imshow(imagey)
     pyplot.show()
-
+#Horizontal and vertical flip
 def flip(imagex,imagey,number,showImage = False, horizontalFlip = True, verticalFlip = True, rotation = 10):
     datax = img_to_array(imagex)
     datay = img_to_array(imagey)
@@ -100,9 +65,8 @@ def flip(imagex,imagey,number,showImage = False, horizontalFlip = True, vertical
             ax1.imshow(imagex)
             ax2.imshow(imagey)
     pyplot.show()
-
-
-def brightness (imagex,imagey,number,showImage = False, rotation = False,rotationRange = 5):
+#Change the brightness
+def brightness(imagex,imagey,number,showImage = False, rotation = False,rotationRange = 5):
     datax = img_to_array(imagex)
     datay = img_to_array(imagey)
     samplesx = expand_dims(datax,0)
@@ -127,8 +91,7 @@ def brightness (imagex,imagey,number,showImage = False, rotation = False,rotatio
             ax1.imshow(imagex)
             ax2.imshow(imagey)
     pyplot.show()
-
-
+#Do zoom in or zoom out
 def zoom(imagex,imagey,number,showImage = False, zoomRange = [0.5,1.5], zoomIn = False, zoomOut=False):
     datax = img_to_array(imagex)
     datay = img_to_array(imagey)
@@ -158,8 +121,7 @@ def zoom(imagex,imagey,number,showImage = False, zoomRange = [0.5,1.5], zoomIn =
             ax1.imshow(imagex)
             ax2.imshow(imagey)
     pyplot.show()
-
-
+#All the augmentations
 def generalAugmentation(imagex,imagey,number,showImage = False,horizontalFlip=False,verticalFlip=False,zoomRange=[1,1],bright = [1,1],rotation = 0):
     datax = img_to_array(imagex)
     datay = img_to_array(imagey)
@@ -181,27 +143,38 @@ def generalAugmentation(imagex,imagey,number,showImage = False,horizontalFlip=Fa
             ax1.imshow(imagex)
             ax2.imshow(imagey)
     pyplot.show()
+#Load the image from a file
+def loadImage(listNameX,listNameY,numberI=4,mode = "general_augmentation",showImage = False):
+    listName = np.array([listNameX,listNameY])
+    idx = listName.shape
+    for i in range(idx[1]):
+        rutax = os.path.join("D:\\testAugmen","x",listName[0,i])
+        print(rutax)
+        rutay = os.path.join("D:\\testAugmen","y",listName[1,i])
+        imgx = load_img(rutax)
+        imgy = load_img(rutay)
+        if mode == "shift":
+            Shift(imgx,imgy,number=numberI,showImage = False)
+        elif mode == "shift":
+            flip(imgx,imgy,number=numberI)
+        elif mode == "shift":
+            brightness(imgx,imgy,number=numberI)
+        elif mode == "shift":
+            zoom(imgx,imgy,number=numberI)
+        else:
+            generalAugmentation(
+            imgx,
+            imgy,
+            number=numberI,
+            horizontalFlip=True,
+            verticalFlip=True,
+            zoomRange=[0.5,0.95], 
+            bright=[0.5,1.5],
+            rotation=5
+            )
+            
 
-
-rutax = os.path.join("D:\\testAugmen","x",listNamesX[0])
-rutay = os.path.join("D:\\testAugmen","y",listNamesY[0])
-imgx = load_img(rutax)
-imgy = load_img(rutay)
-Shift(imgx,imgy,9,showImage=True)
-flip(imgx,imgy,9)
-brightness(imgx,imgy,9)
-zoom(imgx,imgy,9)
-generalAugmentation(
-    imgx,
-    imgy,
-    number=9,
-    horizontalFlip=True,
-    verticalFlip=True,
-    zoomRange=[0.5,0.95], 
-    bright=[0.5,1.5],
-    rotation=5
-    )
-
+loadImage(listNamesX,listNamesY,numberI=2,mode = "shift",showImage= True)
 
 
 
