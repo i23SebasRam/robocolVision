@@ -126,8 +126,8 @@ def generalAugmentation(imagex,imagey,number,post,showImage = False,horizontalFl
     samplesy = expand_dims(datay,0)
     datagen = ImageDataGenerator(horizontal_flip=horizontalFlip,vertical_flip=verticalFlip,zoom_range=zoomRange,brightness_range=bright,rotation_range=rotation,fill_mode="wrap")
     datageny = ImageDataGenerator(horizontal_flip=horizontalFlip,vertical_flip=verticalFlip,zoom_range=zoomRange,rotation_range=rotation,fill_mode="wrap")
-    itx = datagen.flow(samplesx,batch_size=1,seed=42,save_to_dir="D:/testAugmen/xAugmented",save_prefix='x%s'%post)
-    ity = datageny.flow(samplesy,batch_size=1,seed=42,save_to_dir="D:/testAugmen/yAugmented",save_prefix='y%s'%post)
+    itx = datagen.flow(samplesx,batch_size=1,shuffle=False,save_to_dir="D:/testAugmen/xAugmented",save_prefix='x%s'%post)
+    ity = datageny.flow(samplesy,batch_size=1,shuffle=False,save_to_dir="D:/testAugmen/yAugmented",save_prefix='y%s'%post)
     for i in range(number):
         batchx = itx.next()
         batchy = ity.next()
@@ -141,7 +141,7 @@ def generalAugmentation(imagex,imagey,number,post,showImage = False,horizontalFl
             ax2.imshow(imagey)
     pyplot.show()
 #Load the image from a file
-def loadImage(listNameX,listNameY,showImageO,numberI=5,mode = "general_augmentation"):
+def loadImage(listNameX,listNameY,showImageO = False,numberI=5,mode = "general_augmentation"):
     listName = np.array([listNameX,listNameY])
     idx = listName.shape
     for i in range(idx[1]):
@@ -171,7 +171,7 @@ def loadImage(listNameX,listNameY,showImageO,numberI=5,mode = "general_augmentat
             post=i
             )
             
-loadImage(listNamesX,listNamesY,numberI=100,mode = "shift",showImageO= True)
+loadImage(listNamesX,listNamesY,numberI=5)
 
 
 
