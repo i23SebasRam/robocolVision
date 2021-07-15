@@ -12,6 +12,8 @@ path_test_mask = "D:/RosBag/dataSet/test_masks"
 train_datagen = ImageDataGenerator(
     rescale=1./255,
     zoom_range=[0.5,0.95],
+    width_shift_range=0.1,
+    height_shift_range=0.1,
     horizontal_flip=True,
     brightness_range=[0.5,1.2],
     shear_range=0.2
@@ -65,17 +67,17 @@ test_mask_generator = test_datagen.flow_from_directory(
     seed=41
 )
 
-for i in range(132):
+for i in range(16500):
     image = next(train_image_generator)
     image2 = next(train_mask_generator)
 
 #This both below only need to scale the pixels, so just scale the amount there is.
-for i in range(19):
-    image = next(val_image_generator)
-    image = next(val_mask_generator)
+#for i in range(19):
+#    image = next(val_image_generator)
+#    image = next(val_mask_generator)
 
-for i in range(10):
-    image = next(test_image_generator)
-    image = next(test_mask_generator)
+#for i in range(10):
+#    image = next(test_image_generator)
+#    image = next(test_mask_generator)
 
 
