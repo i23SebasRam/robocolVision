@@ -1,15 +1,17 @@
+import keras_segmentation as ks
+from tensorflow import keras
+from tensorflow.keras import layers
+import numpy as np
+import os
+import cv2
+from tensorflow.python.keras.layers.pooling import MaxPooling2D
+from tensorflow.keras.layers import concatenate
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras.preprocessing.image import load_img
+from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import CSVLogger
 from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.optimizers import RMSprop
-from tensorflow.keras.applications import ResNet50V2
-import os
-import numpy as np
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.utils import Sequence
-from tensorflow.keras.preprocessing.image import load_img
-
 
 #Paths
 Path_Train_Frames = "D:/RosBag/dataSet/train_frames/new/"
@@ -24,6 +26,12 @@ Path_test_Masks = "D:/RosBag/dataSet/test_masks/new"
 weights_path = "D:/RosBag/dataSet/Modelo"
 path_csv = "D:/RosBag/dataSet/Modelo/info.csv"
 
+#Parameters
+No_Training_img = len(os.listdir(Path_Train_Frames))
+No_Epochs = 20
+Batch_Size = 4
+Batch_Size_val = 4
+img_size = (224,224)
 
 #Path list images
 train_frames_paths = [
@@ -46,7 +54,6 @@ val_masks_paths = [
         for fname in os.listdir(Path_val_Masks)
     ]
 
-
 #Class for the images
 class images(Sequence):
     def __init__(self, batch_size, img_size, input_img_paths,mask_img_paths):
@@ -66,27 +73,51 @@ class images(Sequence):
         x = np.zeros((self.batch_size,) + self.img_size + (3,), dtype = "float32")
         for j, path in enumerate(batch_input_img_paths):
             img = load_img(path, target_size=self.img_size)
-            x[j] = img
-        y = np.zeros((self.batch_size,) + self.img_size + (3,), dtype = "float32")
+            img = img_to_array(img)
+            x[j] = img/255
+        y = np.zeros((self.batch_size,) + (50176,) + (3,), dtype = "float32")
         for j, path in enumerate(batch_mask_img_paths):
             img = load_img(path, target_size=self.img_size)
-            y[j] = img
+            img = img_to_array(img).reshape((50176,3))
+            y[j] = img/255
         
         return x,y
 
-#Parameters
-No_Training_img = len(os.listdir(Path_Train_Frames))
-No_Epochs = 30
-Batch_Size = 4
-Batch_Size_val = 4
-img_size = (224,224)
+#Model
+img_input = keras.Input((224,224,3))
+
+conv1 = layers.Conv2D(32,(3,3),activation='relu', padding='same')(img_input)
+conv1 = layers.Dropout(0.2)(conv1)
+conv1 = layers.Conv2D(32,(3,3),activation='relu', padding='same')(conv1)
+pool1 = MaxPooling2D((2,2))(conv1)
+
+conv2 = layers.Conv2D(64,(3,3),activation='relu', padding='same')(pool1)
+conv2 = layers.Dropout(0.2)(conv2)
+conv2 = layers.Conv2D(64,(3,3),activation='relu', padding='same')(conv2)
+pool2 = MaxPooling2D((2,2))(conv2)
+
+conv3 = layers.Conv2D(128,(3,3),activation='relu', padding='same')(pool2)
+conv3 = layers.Dropout(0.2)(conv3)
+conv3 = layers.Conv2D(128,(3,3),activation='relu', padding='same')(conv3)
+
+up1 = concatenate([layers.UpSampling2D((2,2))(conv3),conv2], axis=-1)
+
+conv4 = layers.Conv2D(64,(3,3),activation='relu', padding='same')(up1)
+conv4 = layers.Dropout(0.2)(conv4)
+conv4 = layers.Conv2D(64,(3,3),activation='relu', padding='same')(conv4)
+
+up2 = concatenate([layers.UpSampling2D((2,2))(conv4),conv1], axis=-1)
+
+conv5 = layers.Conv2D(32,(3,3),activation='relu', padding='same')(up2)
+conv5 = layers.Dropout(0.2)(conv5)
+conv5 = layers.Conv2D(32,(3,3),activation='relu', padding='same')(conv5)
+
+output = layers.Conv2D(3,(1,1), padding='same')(conv5)
 
 
-#Base Model
-base_model = ResNet50V2(weights='imagenet',
-                        include_top=False,
-                        input_shape=(224,224,3))
-base_model.trainable = False
+model = keras.Model(img_input,output)
+
+model.summary()
 
 #Callbacks
 checkpoint = ModelCheckpoint(weights_path,save_best_only=True)
@@ -94,29 +125,11 @@ csv_logger = CSVLogger(path_csv,separator=';',append=True)
 earlyStopping = EarlyStopping(min_delta=0.01,patience=3)
 
 callbacks_list = [checkpoint,csv_logger,earlyStopping]
-#Top Model
-input = keras.Input(shape=(224,224,3))
-
-#Inferior of the model
-x = base_model(input,training = False)
-
-for filters in [2048,1024,512,256,128,64]:
-    x = layers.Activation("relu")(x)
-    x = layers.Conv2DTranspose(filters,3,padding="same")(x)
-    x = layers.BatchNormalization()(x)
-    if filters != 64:
-        x = layers.UpSampling2D(2)(x)
-
-
-output = layers.Conv2D(3,9,activation="softmax",padding="same")(x)
-
-model = keras.Model(input,output)
-
-model.summary()
 
 #Batch organized images
 train_gen = images(Batch_Size, img_size, train_frames_paths, train_masks_paths)
 val_gen = images(Batch_Size_val, img_size, val_frames_paths, val_masks_paths)
+
 
 #Model compile and fit
 model.compile(
@@ -126,6 +139,3 @@ model.compile(
 )
 
 model.fit(train_gen,epochs=No_Epochs,validation_data=val_gen, callbacks=callbacks_list)
-
-
-
