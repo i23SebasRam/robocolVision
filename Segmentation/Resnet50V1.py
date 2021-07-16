@@ -79,8 +79,8 @@ class images(Sequence):
 #Parameters
 No_Training_img = len(os.listdir(Path_Train_Frames))
 No_Epochs = 30
-Batch_Size = 20
-Batch_Size_val = 2
+Batch_Size = 4
+Batch_Size_val = 4
 img_size = (224,224)
 
 
@@ -123,7 +123,7 @@ val_gen = images(Batch_Size_val, img_size, val_frames_paths, val_masks_paths)
 #Model compile and fit
 model.compile(
     optimizer = 'rmsprop',
-    loss = 'sparse_categorical_crossentropy',
+    loss = 'categorical_crossentropy',
     metrics = [keras.metrics.BinaryAccuracy()]
 )
 
