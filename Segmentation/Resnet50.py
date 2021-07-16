@@ -2,22 +2,21 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import CSVLogger
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import RMSprop
-from tensorflow.keras.losses import sparse_categorical_crossentropy
 from tensorflow.keras.applications import ResNet50V2
 import os
 import numpy as np
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.python.keras.backend import dtype, softmax
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras.preprocessing.image import load_img
 
-#Paths
-Path_Train_Frames = "D:/RosBag/dataSet/train_frames/new"
-Path_Train_Masks = "D:/RosBag/dataSet/train_masks/new"
 
-Path_Val_Frames = "D:/RosBag/dataSet/val_frames/new"
-Path_val_Masks = "D:/RosBag/dataSet/val_masks/new" 
+#Paths
+Path_Train_Frames = "D:/RosBag/dataSet/train_frames/new/"
+Path_Train_Masks = "D:/RosBag/dataSet/train_masks/new/"
+
+Path_Val_Frames = "D:/RosBag/dataSet/val_frames/new/"
+Path_val_Masks = "D:/RosBag/dataSet/val_masks/new/" 
 
 Path_test_Frames = "D:/RosBag/dataSet/test_frames/new"
 Path_test_Masks = "D:/RosBag/dataSet/test_masks/new"
@@ -25,8 +24,32 @@ Path_test_Masks = "D:/RosBag/dataSet/test_masks/new"
 weights_path = "D:/RosBag/dataSet/Modelo"
 path_csv = "D:/RosBag/dataSet/Modelo/info.csv"
 
+
+#Path list images
+train_frames_paths = [
+        os.path.join(Path_Train_Frames, fname)
+        for fname in os.listdir(Path_Train_Frames)
+    ]
+
+train_masks_paths = [
+        os.path.join(Path_Train_Masks, fname)
+        for fname in os.listdir(Path_Train_Masks)
+    ]
+
+val_frames_paths = [
+        os.path.join(Path_Val_Frames, fname)
+        for fname in os.listdir(Path_Val_Frames)
+    ]
+
+val_masks_paths = [
+        os.path.join(Path_val_Masks, fname)
+        for fname in os.listdir(Path_val_Masks)
+    ]
+
+
 #Class for the images
 class images(Sequence):
+    global cosa
     def __init__(self, batch_size, img_size, input_img_paths,mask_img_paths):
         self.batch_size = batch_size
         self.img_size = img_size
@@ -41,11 +64,12 @@ class images(Sequence):
         batch_input_img_paths = self.input_img_paths[i:i + self.batch_size]
         batch_mask_img_paths = self.mask_img_paths[i:i + self.batch_size]
 
-        x = np.zeros((self.batch_size,)) + self.img_size + (3,), dtype = "float32"
+        x = np.zeros((self.batch_size,) + self.img_size + (3,), dtype = "float32")
         for j, path in enumerate(batch_input_img_paths):
+            cosa = path
             img = load_img(path, target_size=self.img_size)
             x[j] = img
-        y = np.zeros((self.batch_size,)) + self.img_size + (3,), dtype = "float32"
+        y = np.zeros((self.batch_size,) + self.img_size + (3,), dtype = "float32")
         for j, path in enumerate(batch_mask_img_paths):
             img = load_img(path, target_size=self.img_size)
             y[j] = img
@@ -93,11 +117,10 @@ model = keras.Model(input,output)
 model.summary()
 
 #Batch organized images
-train_gen = images(Batch_Size, img_size, Path_Train_Frames, Path_Train_Masks)
-val_gen = images(Batch_Size_val, img_size, Path_Val_Frames, Path_val_Masks)
+train_gen = images(Batch_Size, img_size, train_frames_paths, train_masks_paths)
+val_gen = images(Batch_Size_val, img_size, val_frames_paths, val_masks_paths)
 
 #Model compile and fit
-
 model.compile(
     optimizer = 'rmsprop',
     loss = 'sparse_categorical_crossentropy',
