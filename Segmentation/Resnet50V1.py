@@ -9,43 +9,42 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras.preprocessing.image import load_img
+import random 
 
 
 #Paths
-Path_Train_Frames = "D:/RosBag/dataSet/train_frames/new/"
-Path_Train_Masks = "D:/RosBag/dataSet/train_masks/new/"
-
-Path_Val_Frames = "D:/RosBag/dataSet/val_frames/new/"
-Path_val_Masks = "D:/RosBag/dataSet/val_masks/new/" 
-
-Path_test_Frames = "D:/RosBag/dataSet/test_frames/new"
-Path_test_Masks = "D:/RosBag/dataSet/test_masks/new"
-
-weights_path = "D:/RosBag/dataSet/Modelo"
-path_csv = "D:/RosBag/dataSet/Modelo/info.csv"
-
+Path_img = "cosa"
+Path_mask = "cosa"
 
 #Path list images
-train_frames_paths = [
-        os.path.join(Path_Train_Frames, fname)
-        for fname in os.listdir(Path_Train_Frames)
-    ]
+img_paths = [
+    os.path.join(Path_img, fname)
+    for fname in os.listdir(Path_img)
+]
 
-train_masks_paths = [
-        os.path.join(Path_Train_Masks, fname)
-        for fname in os.listdir(Path_Train_Masks)
-    ]
+mask_paths = [
+    os.path.join(Path_mask, fname)
+    for fname in os.listdir(Path_mask)    
+]
 
-val_frames_paths = [
-        os.path.join(Path_Val_Frames, fname)
-        for fname in os.listdir(Path_Val_Frames)
-    ]
+#train_frames_paths = [
+ #       os.path.join(Path_Train_Frames, fname)
+  #      for fname in os.listdir(Path_Train_Frames)
+   # ]
 
-val_masks_paths = [
-        os.path.join(Path_val_Masks, fname)
-        for fname in os.listdir(Path_val_Masks)
-    ]
 
+
+#Split images
+cant_imagenes = 1 #Cuantas imagenes tenemos.
+
+random.Random(40).shuffle(img_paths)
+random.Random(40).shuffle(mask_paths)
+train_img_paths = img_paths[:-int(cant_imagenes*0.6)]
+train_mask_paths = mask_paths[:-int(cant_imagenes*0.6)]
+val_img_paths = img_paths[-int(cant_imagenes*0.6):-int(cant_imagenes*0.8)]
+val_mask_paths = mask_paths[-int(cant_imagenes*0.6):-int(cant_imagenes*0.8)]
+test_img_paths = img_paths[-int(cant_imagenes*0.8):]
+test_mask_paths = img_paths[-int(cant_imagenes*0.8):]
 
 #Class for the images
 class images(Sequence):
@@ -67,17 +66,17 @@ class images(Sequence):
         for j, path in enumerate(batch_input_img_paths):
             img = load_img(path, target_size=self.img_size)
             x[j] = img
-        y = np.zeros((self.batch_size,) + self.img_size + (3,), dtype = "float32")
+        y = np.zeros((self.batch_size,) + self.img_size + (1,), dtype = "uint8")
         for j, path in enumerate(batch_mask_img_paths):
-            img = load_img(path, target_size=self.img_size)
-            y[j] = img
+            img = load_img(path, target_size=self.img_size,color_mode="grayscale")
+            y[j] = np.expand_dims(img,2)
         
         return x,y
 
 #Parameters
 No_Training_img = len(os.listdir(Path_Train_Frames))
 No_Epochs = 30
-Batch_Size = 4
+Batch_Size = 8
 Batch_Size_val = 4
 img_size = (224,224)
 
@@ -94,6 +93,7 @@ csv_logger = CSVLogger(path_csv,separator=';',append=True)
 earlyStopping = EarlyStopping(min_delta=0.01,patience=3)
 
 callbacks_list = [checkpoint,csv_logger,earlyStopping]
+
 #Top Model
 input = keras.Input(shape=(224,224,3))
 
@@ -108,24 +108,23 @@ for filters in [2048,1024,512,256,128,64]:
         x = layers.UpSampling2D(2)(x)
 
 
-output = layers.Conv2D(3,9,activation="softmax",padding="same")(x)
+output = layers.Conv2D(9,3,activation="softmax",padding="same")(x)
 
 model = keras.Model(input,output)
 
 model.summary()
 
 #Batch organized images
-train_gen = images(Batch_Size, img_size, train_frames_paths, train_masks_paths)
-val_gen = images(Batch_Size_val, img_size, val_frames_paths, val_masks_paths)
+train_gen = images(Batch_Size, img_size, train_img_paths, train_mask_paths)
+val_gen = images(Batch_Size_val, img_size, val_img_paths, val_mask_paths)
 
 #Model compile and fit
 model.compile(
     optimizer = 'rmsprop',
-    loss = 'categorical_crossentropy',
-    metrics = [keras.metrics.BinaryAccuracy()]
+    loss = 'sparse_categorical_crossentropy',
+    metrics = [keras.metrics.SparseCategoricalCrossentropy()]
 )
 
 model.fit(train_gen,epochs=No_Epochs,validation_data=val_gen, callbacks=callbacks_list)
-
 
 
