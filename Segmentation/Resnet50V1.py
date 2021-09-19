@@ -15,6 +15,8 @@ import random
 #Paths
 Path_img = "cosa"
 Path_mask = "cosa"
+weights_path = "C:\Users\SEBASTIAN\Documents\GitHub\robocolVision\robocolVision\Segmentation"
+path_csv = "C:\Users\SEBASTIAN\Documents\GitHub\robocolVision\robocolVision\Segmentation\logger.csv"
 
 #Path list images
 img_paths = [
@@ -74,7 +76,7 @@ class images(Sequence):
         return x,y
 
 #Parameters
-No_Training_img = len(os.listdir(Path_Train_Frames))
+No_Training_img = len(os.listdir(img_paths))
 No_Epochs = 30
 Batch_Size = 8
 Batch_Size_val = 4
